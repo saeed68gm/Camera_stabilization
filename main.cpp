@@ -33,6 +33,24 @@ static void drawOptFlowMap(const Mat& orientation,const Mat& magnitude, Mat& cfl
 		}
 }
 
+//calculates the mean value of each column for each frame
+void columnsMean(const Mat& input,Mat& meanRow, int frameNo)
+{
+	long int sum;
+	int val=0;
+	for (int col=0;col<input.cols;col++)
+	{
+		sum=0;
+		for (int row=0;row<input.rows;row++)
+		{
+			sum+=input.at<char>(row,col);			
+		}
+		val=sum/input.cols;
+		meanRow.at<char>(frameNo,col);
+	}
+
+}
+
 int modeEachRow(const Mat& input,float& mode)
 {
 	//Mat bins=Mat::zeros(input.rows,input.cols,CV_8U);
@@ -68,6 +86,8 @@ int main()
 {
 	//image decelerations
 	Mat showImg,curFrame,lastFrame,lastGrey,curGrey;
+	Mat motionCondensed;
+	int kernelSize=7;
 
 	VideoCapture video =VideoCapture("onionskin-1.MP4");
 	VideoWriter videoOut;
@@ -77,13 +97,17 @@ int main()
 		cout  << "Could not open the output video for write! "  << endl;
 		return -1;
 	}
+	double total_frames;
+	total_frames=video.get(CV_CAP_PROP_FRAME_COUNT);
 	video>>showImg;
 	curFrame=showImg.clone();
 	cv::cvtColor(curFrame,lastGrey,CV_BGR2GRAY);
-
+	//initialize the motion condensed image
+	motionCondensed=Mat(showImg.rows,(int)total_frames,CV_8UC3);
 	double displacementX=0, displacementY=0;
-	int frameCounter=0;
+	int frameCounter=1;
 	char key=0;
+	columnsMean(curFrame,motionCondensed,0);
 	while(key!=27)
 	{
 		video>>showImg;
@@ -93,6 +117,10 @@ int main()
 		}
 		curFrame=showImg.clone();
 		cv::cvtColor(curFrame,curGrey,CV_BGR2GRAY);
+		columnsMean(curFrame,motionCondensed,frameCounter);
+
+
+		frameCounter++;
 
 	}
 
